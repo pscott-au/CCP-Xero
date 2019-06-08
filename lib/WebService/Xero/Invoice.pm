@@ -6,6 +6,8 @@ use warnings;
 use Carp;
 use Data::Dumper;
 use WebService::Xero::DateTime;
+use JSON::XS;
+
 =head1 NAME
 
 WebService::Xero::Invoice - encapsulates a Xero API Invoice record
@@ -75,6 +77,7 @@ sub new
     foreach my $key (@PARAMS) { $self->{$key} = defined $params{$key} ? $params{$key} : '';  }
 
     ## create array of line items
+    ## TODO: Create an InvoiceItems class and retain an array of these 
     foreach my $line_item ( @{ $params{LineItems} } )
     {
       push @{$self->{LineItems}}, {
@@ -93,7 +96,7 @@ sub new
     }
 
     #return $self->_error("Unable to create instance of $class") unless (defined $self->{InvoiceNumber} and $self->{InvoiceNumber} ne ''); ## nb didn't use invvoiceID as expect to need to create an object then use that to create backend record.
-    return $self; #->_validate_agent(); ## derived classes will validate this
+    return $self; 
 
 }
 
@@ -118,8 +121,8 @@ sub create_new_through_agent
   creates a new instance from the data provided by querying the API organisation end point 
   ( typically handled by WebService::Xero::Agent->do_xero_api_call() )
 
-  Example Contact Queries using Xero Agent that return Data consumable by this method:
-    https://api.xero.com/api.xro/2.0/Contacts
+  Example Invoice Queries using Xero Agent that return Data consumable by this method:
+    https://api.xero.com/api.xro/2.0/Invoices
 
   Returns undef, a single object instance or an array of object instances depending on the data input provided.
 
@@ -194,6 +197,96 @@ sub as_text
 }
 
 
+
+=head2 as_json()
+
+  returns the object including all properties as a JSON struct.
+  TODO: TO_JSON sub not yet implemented - see Contact for example of approach.
+  Expect that need to create InvoiceLineItems or similar class
+  this sub currently fails.
+
+=cut 
+sub as_json
+{
+  my ( $self ) = @_;
+  my $json = new JSON::XS;
+  $json = $json->convert_blessed ([1]);
+  return  $json->encode( $self ) ; 
+}
+
+
+=head2 new_from_api_data()
+
+  creates a new instance from the data provided by querying the API organisation end point 
+  ( typically handled by WebService::Xero::Agent->do_xero_api_call() )
+
+  Example Invoices Queries using Xero Agent that return Data consumable by this method:
+    https://api.xero.com/api.xro/2.0/Invoices
+
+  Returns undef, a single object instance or an array of object instances depending on the data input provided.
+
+
+=cut 
+
+sub new_array_from_api_data
+{
+  my ( $self, $data ) = @_;
+  my $invoice_list = [];
+  foreach my $invoice  ( @{$data->{Invoices}} )
+  {
+    push @$invoice_list, WebService::Xero::Invoice->new( %{$invoice} );
+  }
+  return $invoice_list;
+  # return WebService::Xero::Invoice->new( debug=> $data );  
+
+}
+
+
+
+
+=head2 get_all_using_agent()
+
+Returns an array-ref list of invoice objects obtained by using the agent passed in using agent => param
+
+
+TODO: What happens if invoices is a multiple of 100 and empty page is returned? 
+
+=cut
+
+sub get_all_using_agent
+{
+  my ( $self, %params ) = @_;
+  $self = WebService::Xero::Invoice->new() if ( $self eq 'WebService::Xero::Invoice'); ## create an instance if called without one
+  return $self->_error('agent is a required parameter') unless ( ref( $params{agent} ) =~ /^WebService::Xero::Agent/m);
+
+  my $page = 1; my $finished = 0; my $all_invoices = []; my $count = 0;
+  do  ## 'https://api.xero.com/api.xro/2.0/Invoices'
+  {
+    if ( my $res = $params{agent}->do_xero_api_call( "$self->{API_URL}?page=$page" ) )
+    {
+      $page++; 
+      my $paged_invoices = $self->new_array_from_api_data( $res );
+      $count += @$paged_invoices; 
+      $finished = 1 if (@$paged_invoices != 100 );
+      ## To ensure that we always return an array-ref, wrap single invoice into array
+      if ( ref($paged_invoices) eq 'ARRAY' )
+      {
+        push @$all_invoices, @$paged_invoices;
+      } elsif ( ref($paged_invoices) eq ref($self) ) {
+        push @$all_invoices, $paged_invoices;
+      } else 
+      {
+        return $self->_error('fetching invoice returned unanticipated typed result') unless ! defined $paged_invoices; ## 404 empty is acceptable - eg if exatly 100 records
+      }      
+    }
+    else 
+    {
+       return $self->_error('FAILED: agent returned an error - check the agent status for details - TODO: is this a multiple of 100?');
+    }
+  } until ( $finished == 1 );
+  return $all_invoices;
+}
+
 =head1 TODO
 
 
@@ -243,6 +336,13 @@ Emailing Invoices - FROM Xero Developer Docs ( https://developer.xero.com/docume
 It is not possible to email an invoice through the Xero application using the Xero accounting API.
 To track progress on this feature request, or to add your support to it, please vote here.
 
+=head1 TODO 
+
+=over 4
+
+=item * there may be potential to refactor duplicate code with Contact into some base class?
+
+=back
 
 
 
@@ -259,7 +359,7 @@ You can also look for information at:
 
 =item * Xero Developer API Docs
 
-L<https://developer.xero.com/documentation/api/contacts/>
+L<https://developer.xero.com/documentation/api/invoices/>
 
 
 =back

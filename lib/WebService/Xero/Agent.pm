@@ -115,7 +115,7 @@ sub get_all_xero_products_from_xero
 =head2 get_all_customer_invoices_from_xero()
 
     Experimental: a shortcut to a do_xero_api_call
-    TODO: convert the invoices to Invoice Objects
+    allows to get all invoices or those for a sepecific contact GUID
 
 =cut 
 
@@ -124,12 +124,15 @@ sub get_all_customer_invoices_from_xero
 {
   my ( $self, $xero_cref ) = @_;  
   my $ret = [];
-  my $ext = uri_encode(qq{Contact.ContactID = Guid("$xero_cref")});
+  my $ext = '';
+  $ext = uri_encode(qq{&where=Contact.ContactID = Guid("$xero_cref")}) if $xero_cref;
   my $page = 1; my $page_count=100;
-  while ( $page_count >= 100 and my $data = $self->do_xero_api_call( qq{https://api.xero.com/api.xro/2.0/Invoices?where=$ext&page=$page} ) ) ## continue querying until we have a non-full page ( ie $page_count < 100 )
+  while ( $page_count >= 100 and my $data = $self->do_xero_api_call( qq{https://api.xero.com/api.xro/2.0/Invoices?page=$page$ext} ) ) ## continue querying until we have a non-full page ( ie $page_count < 100 )
   {
     foreach my $inv ( @{ $data->{Invoices}{Invoice}} )
     {
+      ## TODO: instantiate all line items
+      ## TODO: instantiate invoice
       push @$ret, $inv;
       $page_count--;
     }

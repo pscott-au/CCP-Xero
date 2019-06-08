@@ -149,11 +149,10 @@ sub new
 
   Process:
     Construct a paged query string using filters if provided and use the agent to request data through the Xero API.
-    Return the results as valid WebService::Xero::Contact object(s) or empty array
+    Return the results as valid WebService::Xero::Contact object(s) or empty array reference
 
   Output:
     If there was an error then undef is returned and the agent will contain the description of the issue.
-    Where a valid single result is returned by the Xero Agent, a single instance of WebService::Xero::Contact is returned.
     Where multiple valid results are returned by the Xero Agent, an array of instances of WebService::Xero::Contact is returned.
 
 
@@ -319,12 +318,21 @@ sub as_json
 
 =head2 TO_JSON()
 
-  is called by a potential parent to_json that recursively looks for an unblssed version using calls to TO_JSON.
+  is called by a potential parent to_json that recursively looks for an unblessed version using calls to TO_JSON.
+  
+  NB  - TO_JSON is the required sub name required by JSON module to handle serialising data before converting to JSON
 
 =cut
 sub TO_JSON
 {
   my ( $self ) = @_; 
+
+  #my $UpdatedDateUTC = $self->{UpdatedDateUTC}->TO_JSON() || undef;
+  #my $phones = $self->{Phones}->TO_JSON() || undef;
+  #my $addresses = $self->addresses->TO_JSON() || undef;
+  #my $contact_groups = 
+  #my $contact_persons = 
+
   return {
             ContactID      => $self->{ContactID},
             ContactNumber  => $self->{ContactNumber},
@@ -344,8 +352,8 @@ sub TO_JSON
             IsSupplier     => $self->{IsSupplier},
             HasAttachments => $self->{HasAttachments},
             HasValidationErrors => $self->{HasValidationErrors},
-            Addresses      => $self->{Addresses},
-            Phones         => $self->{Phones}, #$self->Phones_as_JSON(),
+            Addresses      => $self->{Addresses}, ## ->TO_JSON
+            Phones         => $self->{Phones}, #TO_JSON(),
             ContactGroups  => $self->{ContactGroups},
             ContactPersons => $self->{ContactPersons},
             DefaultCurrency => $self->{DefaultCurrency},
