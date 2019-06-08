@@ -43,7 +43,8 @@ my $DEBUG = 1; ## if set display debug info
 die('Configuration is assumed to be defined in the ./t/config/test_config.ini file - copy the template file in the same directory and modify with references to your Private Application API keys and secret') unless -e '../t/config/test_config.ini';
 my $config =  Config::Tiny->read( '../t/config/test_config.ini') || die('failed to load config');
 my $pk_text = read_file( $config->{PRIVATE_APPLICATION}{KEYFILE} );
-my $pko = Crypt::OpenSSL::RSA->new_private_key( $pk_text ); # 'Generate RSA Object from private key file'
+my $pko;
+eval { $pko  = Crypt::OpenSSL::RSA->new_private_key( $pk_text ) }; # 'Generate RSA Object from private key file'
 
 my $xero = WebService::Xero::Agent::PrivateApplication->new( 
                                                           NAME            => $config->{PRIVATE_APPLICATION}{NAME},
@@ -51,7 +52,7 @@ my $xero = WebService::Xero::Agent::PrivateApplication->new(
                                                           CONSUMER_SECRET => $config->{PRIVATE_APPLICATION}{CONSUMER_SECRET}, 
                                                          # KEYFILE         => $config->{PRIVATE_APPLICATION}{KEYFILE},
                                                           PRIVATE_KEY     => $pk_text,
-                                                          );
+                                                          ) || die('unable to create xero private agent ');
 
 ##
 ##

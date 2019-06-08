@@ -16,12 +16,16 @@ WebService::Xero modules primarily encapsulate the [OAuth (v1.0a) access control
 
 # Active Development Version 0.13 
 
+* Using eval  to prevent croak dieing of Crypt::OpenSSL::RSA in Private Agent
+
+# Work in Progress
+
 * Support for PUT REST commands with examples such for example to create new accounts as per [Xero Docs](https://developer.xero.com/documentation/api/accounts#PUT)
 * Support for PDF handling
 * More robust coverage of common usage in examples
 * Reworking Date handling starting with Invoice class
 * Refine overall design and address whether object instances are bound to Xero DB or whether can be created from data stand-alone
-* Improve and expand exampels with actual useful snippets
+* Improve and expand examples with actual useful snippets
 * Improve documentation and include instructions for direct API access without needing the Xero Object classes.
 
 
@@ -231,6 +235,6 @@ Many thanks to the following for help and suggestions:
   * Steve Bertrand for advice on [Perlmonks](https://perlmonks.org) 
 
 [Xeroizer]: <https://github.com/waynerobinson/xeroizer/>
-[Developer Blog]: <https://xero.computerpros.net.au>
+[Developer Blog]: <https://xero.computerpros.net.au> Currently offline
   
 

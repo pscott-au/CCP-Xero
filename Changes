@@ -1,5 +1,10 @@
 Revision history for WebService-Xero
 
+0.13    June, 2019
+        Using eval  to prevent croak dieing of Crypt::OpenSSL::RSA
+        For Private Agent - Return undef from do_xero_api_call in case a GET request returns HTTP code 404 and
+        also expose HTTP response object as per https://rt.cpan.org/Public/Ticket/Attachment/1809006/973669/0002-Handle-GET-404.patch
+
 0.12    December, 2016 -  May 2017
         Refinements to Data objects (Contact,Invoice,Item,Organization etc)
         added https dependency and refined docs and tests

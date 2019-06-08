@@ -7,6 +7,7 @@ use warnings;
 use Carp;
 use base ('WebService::Xero::Agent');
 use Crypt::OpenSSL::RSA;
+use Try::Tiny;
 
 =head1 NAME
 
@@ -40,7 +41,7 @@ Vvt97UgxglKyQ6taNO/c6V8FCKvPC945GKd/b7BoIYZcJsrpo+E+8Ek9IQIDAQAB
 AoGAbbPC+0XIAI0dIp256uEjZkSn89Dw8b27Ka/YeCZKs0UQEYFAiSdE6+9VVoEG
 X1bi3XloM3PSHMQglJpwaMVvTUwZfdxCFIM0mpgXtdK8Xuh3QTZpgH9S0a2HoXrB
 uXFEqvwMcT43ig2FCfVQU86RQZAxrb1YfyFSauEayrVtbT0CQQDe8HEXSkbxjUwj
-I2TdCDA7yOW7rWQPAk3REZ33SqBUdo45qofpkH7vWSx+W6q65uyRYfF4N1JKmW8V
+I2TdCDA7yOW7 THIS IS NOT A REAL KEY BUT SHOW THE FORMAT !@F4N1JK
 OhMxBpFPAkEAyMbGZ2VX6gW37g03OGSoUG6mvXe+CKRqv8hV4UoGeQIUYJTFlt2O
 ukD2jKyHqWIdU/3tM3iP1b8CY6JyVyhOjwJBAJ/NmDMKohnJn9bcKxOpJ/HiypIh
 8sQzcZY4W5QEYTLKHJ7HV08brXFh6VvV12bL2q1HmLAEb69bll2P2Gve+k8CQQC3
@@ -94,15 +95,20 @@ sub _validate_agent
    #     PRIVATE_KEY
   if ( not defined $self->{pko} and $self->{PRIVATE_KEY} =~ /BEGIN RSA PRIVATE KEY/smg )
   {
-    $self->{pko} = Crypt::OpenSSL::RSA->new_private_key(  $self->{PRIVATE_KEY} ) || return $self->_error('PRIVATE_KEY not valid'); 
+    eval {
+      $self->{pko} = Crypt::OpenSSL::RSA->new_private_key(  $self->{PRIVATE_KEY} );
+    }
+
     ## TODO - sort out catching error - currently crashes if fails not return undef
     ##  could try to catch the error .. eg. RSA.xs:178: OpenSSL error: too long
     ## FROM Crypt::OpenSSL::RSA docs
 #       NOTE: Many of the methods in this package can croak, so use eval, or
-#       Error.pm's try/catch mechanism to capture errors.  Also, while some
+#       Error.pm's try/catch mechanism to capture errors.  NB - Error.pm not actively maintained - consider Try::Tiny
+#       Also, while some
 #       methods from earlier versions of this package return true on success,
 #       this (never documented) behavior is no longer the case.
-  }
+  } ## else assume that the pko is valid
+
   $self->{_status} = 'RSA KEY SET';
   return $self->_error('PRIVATE_KEY unable to create a valid RSA:' . ref($self->{pko}) ) unless ( ref($self->{pko}) eq 'Crypt::OpenSSL::RSA' );
   return $self;

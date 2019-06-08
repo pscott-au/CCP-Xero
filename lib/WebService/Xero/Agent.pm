@@ -70,7 +70,8 @@ sub new
       internal_token           => $params{internal_token}           || "",
       internal_token_secret    => $params{internal_token_secret}    || "",  
       pko             => $params{pko} || undef,
-      ua              => LWP::UserAgent->new(ssl_opts => { verify_hostname => 1 },),
+      ua              => LWP::UserAgent->new(agent => 'WebService::Xero', ssl_opts => { verify_hostname => 1 },),
+      response          => undef,
       _status           => undef,
     }, $class;
     return $self->_validate_agent(); ## derived classes to validate required properties
@@ -104,6 +105,7 @@ sub get_all_xero_products_from_xero
 {
   my ( $self ) = @_;
   #my $data = $self->_do_xero_get( q{https://api.xero.com/api.xro/2.0/Items} );
+  ## TODO: Does this need paging?
   my $data = $self->do_xero_api_call( q{https://api.xero.com/api.xro/2.0/Items} ) || return $self->_error('get_all_xero_products_from_xero() failed');
   return $data;
 }
@@ -112,7 +114,8 @@ sub get_all_xero_products_from_xero
 
 =head2 get_all_customer_invoices_from_xero()
 
-    Experimental: a shortcut to do_xero_api_call
+    Experimental: a shortcut to a do_xero_api_call
+    TODO: convert the invoices to Invoice Objects
 
 =cut 
 
@@ -223,6 +226,7 @@ sub do_xero_api_call
   $encryption = 'HMAC-SHA1' if (defined $self->{TOKEN} and $self->{TOKEN} ne $self->{CONSUMER_KEY} ); 
   $self->{TOKEN}        = $self->{CONSUMER_KEY}    unless  $self->{TOKEN};
   $self->{TOKEN_SECRET} = $self->{CONSUMER_SECRET} unless  $self->{TOKEN_SECRET};
+  $self->{response}     = undef;
 
   my %opts = (
     consumer_key     => $self->{CONSUMER_KEY},
@@ -282,17 +286,24 @@ sub do_xero_api_call
   {
     return $self->_error('ONLY POST,PUT AND GET CURRENT SUPPORTED BY WebService::Xero Library');
   }
-  my $res = $self->{ua}->request($req);
+  #my $res = $self->{ua}->request($req);
+  my $res = $self->{response} = $self->{ua}->request($req);
   if ($res->is_success)
   {
     $self->{status} = 'GOT RESPONSE FROM XERO API CALL';
     if ( $wantsPdf ) 
     {
-      $data = $res->content || return $self->api_error( $res->content );  
+      $data = from_json($res->content) || return $self->api_error( $res->content );  
     } else 
     {
         $data = from_json($res->content) || return $self->api_error( $res->content );  
     }
+  }
+  elsif ( $method eq 'GET' and $res->code == 404 )
+  {
+    ## normal behaviour when resource is missing
+    $self->{status} = 'GOT RESPONSE FROM XERO API CALL but 404 returned indicating resource missing';
+    return undef;
   } 
   else 
   {
@@ -369,12 +380,12 @@ sub get_status
 
 =head1 AUTHOR
 
-Peter Scott, C<< <peter at computerpros.com.au> >>
+Peter Scott, C<< <peter at computerpros.com.au> >> and others
 
 =head1 BUGS
 
 Please report any bugs or feature requests to C<bug-ccp-xero at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=CCP-Xero>.  I will be notified, and then you'll
+the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=WebService-Xero>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
 
 
