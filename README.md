@@ -17,7 +17,7 @@ WebService::Xero modules primarily encapsulate the [OAuth (v1.0a) access control
 # Active Development Version 0.13 
 
 * Support for PUT REST commands with examples such for example to create new accounts as per [Xero Docs](https://developer.xero.com/documentation/api/accounts#PUT)
-* Supoprt for PDF handling
+* Support for PDF handling
 * More robust coverage of common usage in examples
 * Reworking Date handling starting with Invoice class
 * Refine overall design and address whether object instances are bound to Xero DB or whether can be created from data stand-alone
@@ -27,6 +27,8 @@ WebService::Xero modules primarily encapsulate the [OAuth (v1.0a) access control
 
 
 # Install from CPAN
+
+NB the development version may be ahead of the CPAN version
 
 This package is now available through [CPAN](http://search.cpan.org/~localshop/WebService-Xero/)
 
@@ -179,7 +181,7 @@ perldoc WebService::Xero::Contacts_Container
 LICENSE AND COPYRIGHT
 ----
 
-Copyright 2016-2018 Peter Scott.
+Copyright 2016-2019 Peter Scott.
 
 This program is free software; you can redistribute it and/or modify it
 under the terms of the the Artistic License (2.0). You may obtain a
